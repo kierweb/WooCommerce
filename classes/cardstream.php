@@ -8,7 +8,9 @@
 		private $test_ac 		= 100001;
 		private $secret			= 'Circle4Take40Idea';
 		private $mms_url 		= 'https://mms.cardstream.com';
-		private $gateway_url 	= 'https://gateway.cardstream.com/hosted/';
+		private $gateway_hosted_url 	= 'https://gateway.cardstream.com/hosted/';
+		private $gateway_direct_url 	= 'https://gateway.cardstream.com/direct/';
+		public  $gateway_url 	= 'none';
 
 		public function __construct() {
 
@@ -28,6 +30,11 @@
 			$this->description       	= isset( $this->settings['description'] ) ? $this->settings['description'] : 'Pay via Credit / Debit Card with CARDSTREAM secure card processing.';
 			$this->gateway 				= isset( $this->settings['gateway'] ) ? $this->settings['gateway'] : 'cardstream';
 			$this->type 				= isset( $this->settings['type'] ) ? $this->settings['type'] : 'hosted';
+			if (isset($this->settings['type'])) {
+				$this->gateway_url = (($this->settings['type'] == 'hosted') ? $this->gateway_hosted_url : $this->gateway_direct_url);
+			} else {
+				$this->gateway_url = $gateway_direct_url;
+			}
 
 			// Hooks
 			/* 1.6.6 */
@@ -70,7 +77,7 @@
 						'hosted'    => 'Hosted',
 						'direct'    => 'Direct'
 					),
-					'description'  	=> __( 'This controls method of integration. Remember to change Gateway URL!', 'woocommerce_cardstream' ),
+					'description'  	=> __( 'This controls method of integration.', 'woocommerce_cardstream' ),
 					'default'   	=> 'hosted'
 				),
 
@@ -100,13 +107,6 @@
 					'type'    		=> 'text',
 					'description'  	=> __( 'Please enter your 3 digit <a href="http://en.wikipedia.org/wiki/ISO_3166-1" target="_blank">ISO country code</a>', 'woocommerce_cardstream' ),
 					'default'   	=> '826'
-				),
-
-				'gatewayURL'=> array(
-					'title'   		=> __( 'Gateway URL', 'woocommerce_cardstream' ),
-					'type'    		=> 'text',
-					'description'  	=> __( 'If you have a custom hosted form, enter the URL here', 'woocommerce_cardstream' ),
-					'default'   	=> $this->gateway_url
 				),
 
 			);
@@ -171,7 +171,7 @@
 				$fields['signature'] = $this->createSignature($fields, $this->settings['signature']);
 			}
 
-			$form = '<form action="' . $this->settings['gatewayURL'] . '" method="post" id="' . $this->gateway . '_payment_form">';
+			$form = '<form action="' . $this->gateway_url . '" method="post" id="' . $this->gateway . '_payment_form">';
 
 			foreach ( $fields as $key => $value ) {
 				$form .= '<input type="hidden" name="' . $key . '" value="' . $value . '" />';
@@ -306,7 +306,7 @@
 			$req['signature'] = $this->createSignature($req, $this->settings['signature']);
 
 
-			$ch = curl_init($this->settings['gatewayURL']);
+			$ch = curl_init($this->gateway_url);
 			curl_setopt($ch, CURLOPT_POST, true);
 			curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($req));
 			curl_setopt($ch, CURLOPT_HEADER, false);
@@ -425,7 +425,7 @@
 				$fields['signature'] = $this->createSignature($fields, $this->settings['signature']);
 			}
 
-			$form = '<form action="' . $this->settings['gatewayURL'] . '" method="post" id="' . $this->gateway . '_payment_form">';
+			$form = '<form action="' . $this->gateway_url . '" method="post" id="' . $this->gateway . '_payment_form">';
 
 			foreach ( $fields as $key => $value ) {
 				$form .= '<input type="hidden" name="' . $key . '" value="' . $value . '" />';
@@ -635,7 +635,7 @@
 				
 				if ($return_sig != $this->createSignature($response, $this->settings['signature'])) {
 				
-					$message = __('Payment error: Response Signature Mismatch 2', 'woothemes');
+					$message = __('Payment error: Response Signature Mismatch', 'woothemes');
 					
 					if (method_exists($woocommerce, add_error)) {
 						$woocommerce->add_error($message);
