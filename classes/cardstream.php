@@ -11,7 +11,6 @@
 		private $gateway_url 	= 'https://gateway.cardstream.com/hosted/';
 
 		public function __construct() {
-			add_action('woocommerce_api_wc_test', 'test' );
 
 			$this->id     				= $this->gateway;
 			$this->method_title   		= __(ucwords($this->gateway) , 'woocommerce_cardstream');
