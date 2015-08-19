@@ -11,6 +11,7 @@
 		private $gateway_url 	= 'https://gateway.cardstream.com/hosted/';
 
 		public function __construct() {
+			add_action('woocommerce_api_wc_test', 'test' );
 
 			$this->id     				= $this->gateway;
 			$this->method_title   		= __(ucwords($this->gateway) , 'woocommerce_cardstream');
@@ -37,12 +38,10 @@
 			add_action( 'woocommerce_update_options_payment_gateways_' . $this->id, array( $this, 'process_admin_options' ) );
 
 			add_action('woocommerce_receipt_cardstream', array($this, 'receipt_page'));
-			add_action('woocommerce_api_wc_cardstream_hosted', array( $this, 'process_response' ) );
-			
+			add_action('woocommerce_api_wc_cardstream_hosted', array($this, 'process_response'));
+			add_action('woocommerce_api_wc_cardstream_callback', array($this, 'process_callback'));
+
 		}
-		
-
-
 
 		/**
 		 * Initialise Gateway Settings
@@ -143,6 +142,7 @@
 			$countries	= new WC_Countries();
 			$amount 	= $order->get_total() * 100;
 			$redirect 	= str_replace( 'https:', 'http:', add_query_arg('wc-api', 'WC_Cardstream_Hosted', home_url( '/' ) ) );
+			$callback 	= str_replace( 'https:', 'http:', add_query_arg('wc-api', 'WC_Cardstream_Callback', home_url( '/' ) ) );
 
 			$billing_address  = $order->billing_address_1 . "\n";
 			if (isset($order->billing_address_2) && !empty($order->billing_address_2)) {
@@ -160,6 +160,7 @@
 				"transactionUnique" => $order->order_key . '-' . time(),
 				"orderRef" 			=> $order->id,
 				"redirectURL" 		=> $redirect,
+				"callbackURL" 		=> $callback,
 				"customerName" 		=> "{$order->billing_first_name} {$order->billing_last_name}",
 				"customerAddress"	=> $billing_address,
 				"customerPostCode"	=> $order->billing_postcode,
@@ -195,6 +196,7 @@
 			$countries	= new WC_Countries();
 			$amount 	= $order->get_total() * 100;
 			$redirect 	= str_replace( 'https:', 'http:', add_query_arg('wc-api', 'WC_Cardstream_Hosted', home_url( '/' ) ) );
+			$callback 	= str_replace( 'https:', 'http:', add_query_arg('wc-api', 'WC_Cardstream_Callback', home_url( '/' ) ) );
 
 			$billing_address  = $order->billing_address_1 . "\n";
 			if (isset($order->billing_address_2) && !empty($order->billing_address_2)) {
@@ -387,6 +389,7 @@
 			$countries	= new WC_Countries();
 			$amount 	= $order->get_total() * 100;
 			$redirect 	= str_replace( 'https:', 'http:', add_query_arg('wc-api', 'WC_Cardstream_Hosted', home_url( '/' ) ) );
+			$callback 	= str_replace( 'https:', 'http:', add_query_arg('wc-api', 'WC_Cardstream_Callback', home_url( '/' ) ) );
 
 			$billing_address  = $order->billing_address_1 . "\n";
 			if (isset($order->billing_address_2) && !empty($order->billing_address_2)) {
@@ -549,6 +552,129 @@
 						
 						$order->add_order_note( __(ucwords( $this->gateway ).' payment failed.' . $orderNotes, 'woocommerce_cardstream') );
 						wp_safe_redirect( $order->get_cancel_order_url( $order ) );
+						exit;
+
+					}
+
+				}
+
+			} else { 
+				exit;
+			}
+
+		}
+
+	}
+
+	/**
+	 * Callback url class
+	 */
+	class WC_Cardstream_Callback extends WC_Cardstream_Hosted {		
+
+		public function __construct() {
+			add_action('woocommerce_api_wc_test', 'test' );
+
+			$this->id     				= $this->gateway;
+			$this->method_title   		= __(ucwords($this->gateway) , 'woocommerce_cardstream');
+			$this->method_description 	= __(ucwords($this->gateway) . ' hosted works by sending the user to ' . ucwords($this->gateway) . ' to enter their payment infocardstream-hosted.phpmation', 'woocommerce_cardstream');
+			$this->icon     			= str_replace('/classes', '/', plugins_url( '/', __FILE__ )) . '/img/logo.png';
+			$this->has_fields    		= false;
+			
+			$this->init_form_fields();
+
+			$this->init_settings();
+
+			// Get setting values
+			$this->enabled       		= isset( $this->settings['enabled'] ) ? $this->settings['enabled'] : 'no';
+			$this->title        		= isset( $this->settings['title'] ) ? $this->settings['title'] : 'Credit Card via CARDSTREAM';
+			$this->description       	= isset( $this->settings['description'] ) ? $this->settings['description'] : 'Pay via Credit / Debit Card with CARDSTREAM secure card processing.';
+			$this->gateway 				= isset( $this->settings['gateway'] ) ? $this->settings['gateway'] : 'cardstream';
+			$this->type 				= isset( $this->settings['type'] ) ? $this->settings['type'] : 'hosted';
+
+			// Hooks
+			add_action('woocommerce_api_wc_cardstream_callback', array($this, 'process_callback'));
+
+		}
+
+
+
+		/**
+		 * Function to generate a signature
+		 */
+
+		function createSignature(array $data, $key) {
+
+			if (!$key || !is_string($key) || $key === '' || !$data || !is_array($data)) {
+					return null;
+			}
+			
+			ksort($data);
+			
+			// Create the URL encoded signature string
+			$ret = http_build_query($data, '', '&');
+			
+			// Normalise all line endings (CRNL|NLCR|NL|CR) to just NL (%0A)
+			$ret = preg_replace('/%0D%0A|%0A%0D|%0A|%0D/i', '%0A', $ret);
+			
+			// Hash the signature string and the key together
+			return hash('SHA512', $ret . $key);
+			
+		}
+
+		/**
+		 * Check for CARDSTREAM Callback Response
+		 */
+		function process_callback() {
+			global $woocommerce;
+			$response = $_POST;
+			if (isset($response['responseCode'])) {
+			
+				$order	= new WC_Order((int) $response['orderRef']);
+			
+				$return_sig = $response['signature'];
+				unset($response['signature']);
+				
+				if ($return_sig != $this->createSignature($response, $this->settings['signature'])) {
+				
+					$message = __('Payment error: Response Signature Mismatch 2', 'woothemes');
+					
+					if (method_exists($woocommerce, add_error)) {
+						$woocommerce->add_error($message);
+					} else {
+						wc_add_notice($message, $notice_type = 'error');
+					}
+					
+					$order->add_order_note( __(ucwords( $this->gateway ).' payment failed.', 'woocommerce_cardstream') );
+					wp_safe_redirect( $order->get_cancel_order_url( $order ) );
+					exit;					
+				}
+
+				if ($order->status == 'completed') {
+
+				} else {
+
+					$orderNotes  =  "\r\nResponse Code : {$response['responseCode']}\r\n";
+					$orderNotes .=  "Message : {$VPMessage}\r\n";
+					$orderNotes .=  "Amount Received : " . number_format($response['amount'] / 100, 2, '.', ',') . "\r\n";
+					$orderNotes .=  "Unique Transaction Code : {$response['transactionUnique']}";
+
+					if ($response['responseCode'] === '0') {
+					
+						$order->add_order_note( __(ucwords( $this->gateway ).' payment completed.' . $orderNotes, 'woocommerce_cardstream') );
+						$order->payment_complete();
+						exit;
+						
+					} else {
+					
+						$message = __('Payment error: ', 'woothemes') . $response['responseMessage'];
+						
+						if (method_exists($woocommerce, add_error)) {
+							$woocommerce->add_error($message);
+						} else {
+							wc_add_notice($message, $notice_type = 'error');
+						}
+						
+						$order->add_order_note( __(ucwords( $this->gateway ).' payment failed.' . $orderNotes, 'woocommerce_cardstream') );
 						exit;
 
 					}
