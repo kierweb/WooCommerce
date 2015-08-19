@@ -336,6 +336,10 @@
 		         </form>";
 
 			} elseif (isset($res['signature'])) {
+				$orderNotes  =  "\r\nResponse Code : {$res['responseCode']}\r\n";
+				$orderNotes .=  "Message : ". htmlentities($res['responseMessage']) . "\r\n";
+				$orderNotes .=  "Amount Received : " . number_format($res['amount'] / 100, 2, '.', ',') . "\r\n";
+				$orderNotes .=  "Unique Transaction Code : {$res['transactionUnique']}";
 
 				$return_signature = $res['signature'];
 
@@ -349,8 +353,10 @@
 
 					if ($res['responseCode'] === "0") {
 
+						$order->add_order_note( __(ucwords( $this->gateway ).' payment completed.' . $orderNotes, 'woocommerce_cardstream') );
+						$order->payment_complete();
 						echo "<p>Thank you for your payment</p>" . PHP_EOL;
-
+						exit;
 					} else {
 
 						echo "<p>Failed to take payment: " . htmlentities($res['responseMessage']) . "</p>" . PHP_EOL;
@@ -364,8 +370,10 @@
 
 				if ($res['responseCode'] === "0") {
 
+					$order->add_order_note( __(ucwords( $this->gateway ).' payment completed.' . $orderNotes, 'woocommerce_cardstream') );
+					$order->payment_complete();
 					echo "<p>Thank you for your payment</p>";
-
+					exit;
 				} else {
 
 					echo "<p>Failed to take payment: " . htmlentities($res['responseMessage']) . "</p>" . PHP_EOL;
