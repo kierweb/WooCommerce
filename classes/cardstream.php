@@ -576,27 +576,11 @@
 	/**
 	 * Callback url class
 	 */
-	class WC_Cardstream_Callback extends WC_Cardstream_Hosted {		
+	class WC_Cardstream_Callback extends WC_Payment_Gateway {		
 
 		public function __construct() {
-			add_action('woocommerce_api_wc_test', 'test' );
 
-			$this->id     				= $this->gateway;
-			$this->method_title   		= __(ucwords($this->gateway) , 'woocommerce_cardstream');
-			$this->method_description 	= __(ucwords($this->gateway) . ' hosted works by sending the user to ' . ucwords($this->gateway) . ' to enter their payment infocardstream-hosted.phpmation', 'woocommerce_cardstream');
-			$this->icon     			= str_replace('/classes', '/', plugins_url( '/', __FILE__ )) . '/img/logo.png';
-			$this->has_fields    		= false;
-			
-			$this->init_form_fields();
-
-			$this->init_settings();
-
-			// Get setting values
-			$this->enabled       		= isset( $this->settings['enabled'] ) ? $this->settings['enabled'] : 'no';
-			$this->title        		= isset( $this->settings['title'] ) ? $this->settings['title'] : 'Credit Card via CARDSTREAM';
-			$this->description       	= isset( $this->settings['description'] ) ? $this->settings['description'] : 'Pay via Credit / Debit Card with CARDSTREAM secure card processing.';
-			$this->gateway 				= isset( $this->settings['gateway'] ) ? $this->settings['gateway'] : 'cardstream';
-			$this->type 				= isset( $this->settings['type'] ) ? $this->settings['type'] : 'hosted';
+			$this->process_callback();
 
 			// Hooks
 			add_action('woocommerce_api_wc_cardstream_callback', array($this, 'process_callback'));
