@@ -571,46 +571,6 @@
 
 		}
 
-	}
-
-	/**
-	 * Callback url class
-	 */
-	class WC_Cardstream_Callback extends WC_Payment_Gateway {		
-
-		public function __construct() {
-
-			$this->process_callback();
-
-			// Hooks
-			add_action('woocommerce_api_wc_cardstream_callback', array($this, 'process_callback'));
-
-		}
-
-
-
-		/**
-		 * Function to generate a signature
-		 */
-
-		function createSignature(array $data, $key) {
-
-			if (!$key || !is_string($key) || $key === '' || !$data || !is_array($data)) {
-					return null;
-			}
-			
-			ksort($data);
-			
-			// Create the URL encoded signature string
-			$ret = http_build_query($data, '', '&');
-			
-			// Normalise all line endings (CRNL|NLCR|NL|CR) to just NL (%0A)
-			$ret = preg_replace('/%0D%0A|%0A%0D|%0A|%0D/i', '%0A', $ret);
-			
-			// Hash the signature string and the key together
-			return hash('SHA512', $ret . $key);
-			
-		}
 
 		/**
 		 * Check for CARDSTREAM Callback Response
