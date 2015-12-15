@@ -6,7 +6,7 @@ This module enables the use of http://www.cardstream.com payment gateway using t
 COMPATIBILITY
 ------------
 
-Compatible with version 2.4.5 of Woocommerce. 
+Compatible with version 2.4.5 of Woocommerce and upto 4.4 of Wordpress. 
 
 INTRODUCTION
 ------------
