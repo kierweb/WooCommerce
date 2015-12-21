@@ -3,7 +3,7 @@
 Plugin Name: WooCommerce Cardstream
 Plugin URI: http://woothemes.com/woocommerce/
 Description: Provides an Cardstream gateway for WooCommerce
-Version: 1.0
+Version: 1.1
 Author: Cardstream
 Author URI: http://www.cardstream.com/
 License: GPL2

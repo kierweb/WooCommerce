@@ -33,3 +33,5 @@ e.g.
 
 = 1.0 =
 * First working version
+= 1.1 =
+* Revised handeling callback function
