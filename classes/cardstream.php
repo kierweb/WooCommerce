@@ -19,7 +19,7 @@
 			$this->method_description 	= __(ucwords($this->gateway) . ' hosted works by sending the user to ' . ucwords($this->gateway) . ' to enter their payment infocardstream-hosted.phpmation', 'woocommerce_cardstream');
 			$this->icon     			= str_replace('/classes', '/', plugins_url( '/', __FILE__ )) . '/img/logo.png';
 			$this->has_fields    		= false;
-			
+
 			$this->init_form_fields();
 
 			$this->init_settings();
@@ -102,6 +102,24 @@
 					'default'   	=> $this->secret
 				),
 
+				'formResponsive' => array(
+					'title'   		=> __( 'Responsive form', 'woocommerce_cardstream' ),
+					'type'    		=> 'select',
+					'options'       => array(
+						'Y'    => 'Yes',
+						'N'    => 'No'
+					),
+				'description'  	=> __( 'This controls whether the payment form is responsive.', 'woocommerce_cardstream' ),
+				'default'   	=> 'No'
+				),
+
+				'customForm' => array(
+					'title' => __('Custom form', 'woocommerce_cardstream'),
+					'type' => 'text',
+					'description' => __('Allows the use of custom forms', 'woocommerce_cardstream'),
+					'default' => $this->gateway_hosted_url
+				),
+
 				'countryCode'	=> array(
 					'title'   		=> __( 'Country Code', 'woocommerce_cardstream' ),
 					'type'    		=> 'text',
@@ -164,19 +182,20 @@
 				"customerAddress"	=> $billing_address,
 				"customerPostCode"	=> $order->billing_postcode,
 				"customerEmail" 	=> $order->billing_email,
-				"customerPhone" 	=> $order->billing_phone
+				"customerPhone" 	=> $order->billing_phone,
+				"formResponsive" 	=> $this->settings['formResponsive']
 			);
 
 			if (isset($this->settings['signature']) && !empty($this->settings['signature'])) {
 				$fields['signature'] = $this->createSignature($fields, $this->settings['signature']);
 			}
 
-			$form = '<form action="' . $this->gateway_url . '" method="post" id="' . $this->gateway . '_payment_form">';
+			$form = '<form action="' . (!empty($this->settings['customForm']) ? $this->settings['customForm'] : $this->gateway_url) . '" method="post" id="' . $this->gateway . '_payment_form">';
 
 			foreach ( $fields as $key => $value ) {
 				$form .= '<input type="hidden" name="' . $key . '" value="' . $value . '" />';
 			}
-			$form .= '<input type="submit" class="button alt" value="'.__('Pay securly via ' . ucwords( $this->gateway ), 'woocommerce_cardstream').'" />';
+			$form .= '<input type="submit" class="button alt" value="'.__('Pay securely via ' . ucwords( $this->gateway ), 'woocommerce_cardstream').'" />';
 			$form .= '<a class="button cancel" href="'.$order->get_cancel_order_url().'">'.__('Cancel order', 'woocommerce_cardstream').'</a>';
 			$form .= '</form>';
 
@@ -252,14 +271,14 @@
 					"required" => "required"
 				),
 			);
-			
+
 			$form = '<form action="' . '//' . $_SERVER[HTTP_HOST].$_SERVER[REQUEST_URI] . '&step=2" method="post" id="' . $this->gateway . '_payment_form">';
 
 			foreach ( $fields as $key => $value ) {
 				$form .= '<label class="card-label label-'.$key.'">' . $value['name'] . '</label>';
 				$form .= '<input type="text" class="card-input field-'. $key .'" name="' . $key . '" value="' . $value['value'] . '" ' . $value['required'] . '" />';
 			}
-			$form .= '<p><input type="submit" class="button alt" value="'.__('Pay securly via ' . ucwords( $this->gateway ), 'woocommerce_cardstream').'" /></p>';
+			$form .= '<p><input type="submit" class="button alt" value="'.__('Pay securely via ' . ucwords( $this->gateway ), 'woocommerce_cardstream').'" /></p>';
 			$form .= '<a class="button cancel" href="'.$order->get_cancel_order_url().'">'.__('Cancel order', 'woocommerce_cardstream').'</a>';
 			$form .= '</form>';
 
@@ -438,7 +457,7 @@
 			foreach ( $fields as $key => $value ) {
 				$form .= '<input type="hidden" name="' . $key . '" value="' . $value . '" />';
 			}
-			$form .= '<input type="submit" class="button alt" value="'.__('Pay securly via ' . ucwords( $this->gateway ), 'woocommerce_cardstream').'" />';
+			$form .= '<input type="submit" class="button alt" value="'.__('Pay securely via ' . ucwords( $this->gateway ), 'woocommerce_cardstream').'" />';
 			$form .= '<a class="button cancel" href="'.$order->get_cancel_order_url().'">'.__('Cancel order', 'woocommerce_cardstream').'</a>';
 			$form .= '</form>';
 
@@ -454,18 +473,18 @@
 			if (!$key || !is_string($key) || $key === '' || !$data || !is_array($data)) {
 					return null;
 			}
-			
+
 			ksort($data);
-			
+
 			// Create the URL encoded signature string
 			$ret = http_build_query($data, '', '&');
-			
+
 			// Normalise all line endings (CRNL|NLCR|NL|CR) to just NL (%0A)
 			$ret = preg_replace('/%0D%0A|%0A%0D|%0A|%0D/i', '%0A', $ret);
-			
+
 			// Hash the signature string and the key together
 			return hash('SHA512', $ret . $key);
-			
+
 		}
 
 
@@ -496,38 +515,38 @@
 				echo $this->generate_cardstream_form($order);
 			}
 		}
-				
-		
+
+
 
 		/**
 		 * Check for CARDSTREAM Response
 		 */
 		function process_response() {
-		
+
 			global $woocommerce;
-			
+
 			$response = $_POST;
-			
+
 			if (isset($response['responseCode'])) {
-			
+
 				$order	= new WC_Order((int) $response['orderRef']);
-			
+
 				$return_sig = $response['signature'];
 				unset($response['signature']);
-				
+
 				if ($return_sig != $this->createSignature($response, $this->settings['signature'])) {
-				
+
 					$message = __('Payment error: Response Signature Mismatch', 'woothemes');
-					
+
 					if (method_exists($woocommerce, add_error)) {
 						$woocommerce->add_error($message);
 					} else {
 						wc_add_notice($message, $notice_type = 'error');
 					}
-					
+
 					$order->add_order_note( __(ucwords( $this->gateway ).' payment failed.', 'woocommerce_cardstream') );
 					wp_safe_redirect( $order->get_cancel_order_url( $order ) );
-					exit;					
+					exit;
 				}
 
 				if ($order->status == 'completed') {
@@ -540,23 +559,23 @@
 					$orderNotes .=  "Unique Transaction Code : {$response['transactionUnique']}";
 
 					if ($response['responseCode'] === '0') {
-					
+
 						$order->add_order_note( __(ucwords( $this->gateway ).' payment completed.' . $orderNotes, 'woocommerce_cardstream') );
 						$order->payment_complete();
 
 						wp_safe_redirect( $this->get_return_url( $order ) );
 						exit;
-						
+
 					} else {
-					
+
 						$message = __('Payment error: ', 'woothemes') . $response['responseMessage'];
-						
+
 						if (method_exists($woocommerce, add_error)) {
 							$woocommerce->add_error($message);
 						} else {
 							wc_add_notice($message, $notice_type = 'error');
 						}
-						
+
 						$order->add_order_note( __(ucwords( $this->gateway ).' payment failed.' . $orderNotes, 'woocommerce_cardstream') );
 						wp_safe_redirect( $order->get_cancel_order_url( $order ) );
 						exit;
@@ -565,7 +584,7 @@
 
 				}
 
-			} else { 
+			} else {
 				exit;
 			}
 
@@ -579,25 +598,25 @@
 			global $woocommerce;
 			$response = $_POST;
 			if (isset($response['responseCode'])) {
-			
+
 				$order	= new WC_Order((int) $response['orderRef']);
-			
+
 				$return_sig = $response['signature'];
 				unset($response['signature']);
-				
+
 				if ($return_sig != $this->createSignature($response, $this->settings['signature'])) {
-				
+
 					$message = __('Payment error: Response Signature Mismatch', 'woothemes');
-					
+
 					if (method_exists($woocommerce, add_error)) {
 						$woocommerce->add_error($message);
 					} else {
 						wc_add_notice($message, $notice_type = 'error');
 					}
-					
+
 					$order->add_order_note( __(ucwords( $this->gateway ).' payment failed.', 'woocommerce_cardstream') );
 					wp_safe_redirect( $order->get_cancel_order_url( $order ) );
-					exit;					
+					exit;
 				}
 
 				if ($order->status == 'completed') {
@@ -610,21 +629,21 @@
 					$orderNotes .=  "Unique Transaction Code : {$response['transactionUnique']}";
 
 					if ($response['responseCode'] === '0') {
-					
+
 						$order->add_order_note( __(ucwords( $this->gateway ).' payment completed.' . $orderNotes, 'woocommerce_cardstream') );
 						$order->payment_complete();
 						exit;
-						
+
 					} else {
-					
+
 						$message = __('Payment error: ', 'woothemes') . $response['responseMessage'];
-						
+
 						if (method_exists($woocommerce, add_error)) {
 							$woocommerce->add_error($message);
 						} else {
 							wc_add_notice($message, $notice_type = 'error');
 						}
-						
+
 						$order->add_order_note( __(ucwords( $this->gateway ).' payment failed.' . $orderNotes, 'woocommerce_cardstream') );
 						exit;
 
@@ -632,7 +651,7 @@
 
 				}
 
-			} else { 
+			} else {
 				exit;
 			}
 
