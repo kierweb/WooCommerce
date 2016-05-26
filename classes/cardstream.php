@@ -101,6 +101,24 @@
 					'description'  	=> __( 'Please enter the signature key for the merchant account. This can be changed in the <a href="'.$this->mms_url.'" target="_blank">MMS</a>', 'woocommerce_cardstream' ),
 					'default'   	=> $this->secret
 				),
+				
+				'formResponsive' => array(
+					'title'   		=> __( 'Responsive form', 'woocommerce_cardstream' ),
+					'type'    		=> 'select',
+					'options'       => array(
+						'Y'    => 'Yes',
+						'N'    => 'No'
+					),
+				'description'  	=> __( 'This controls whether the payment form is responsive.', 'woocommerce_cardstream' ),
+				'default'   	=> 'No'
+				),
+				
+				'customForm' => array(
+					'title' => __('Custom form', 'woocommerce_cardstream'),
+					'type' => 'text',
+					'description' => __('Allows the use of custom forms', 'woocommerce_cardstream'),
+					'default' => $this->gateway_hosted_url
+				),
 
 				'countryCode'	=> array(
 					'title'   		=> __( 'Country Code', 'woocommerce_cardstream' ),
@@ -164,14 +182,15 @@
 				"customerAddress"	=> $billing_address,
 				"customerPostCode"	=> $order->billing_postcode,
 				"customerEmail" 	=> $order->billing_email,
-				"customerPhone" 	=> $order->billing_phone
+				"customerPhone" 	=> $order->billing_phone,
+				"formResponsive" 	=> $this->settings['formResponsive']
 			);
 
 			if (isset($this->settings['signature']) && !empty($this->settings['signature'])) {
 				$fields['signature'] = $this->createSignature($fields, $this->settings['signature']);
 			}
 
-			$form = '<form action="' . $this->gateway_url . '" method="post" id="' . $this->gateway . '_payment_form">';
+			$form = '<form action="' . (!empty($this->settings['customForm']) ? $this->settings['customForm'] : $this->gateway_url) . '" method="post" id="' . $this->gateway . '_payment_form">';
 
 			foreach ( $fields as $key => $value ) {
 				$form .= '<input type="hidden" name="' . $key . '" value="' . $value . '" />';
@@ -194,8 +213,8 @@
 			$order 		= new WC_Order( $order_id );
 			$countries	= new WC_Countries();
 			$amount 	= $order->get_total() * 100;
-			$redirect 	= str_replace( 'https:', 'http:', add_query_arg('wc-api', 'WC_Cardstream_Hosted', home_url( '/' ) ) );
-			$callback 	= str_replace( 'https:', 'http:', add_query_arg('wc-api', 'WC_Cardstream_Callback', home_url( '/' ) ) );
+			$redirect 	= add_query_arg('wc-api', 'WC_Cardstream_Hosted', home_url( '/' ));
+			$callback 	= add_query_arg('wc-api', 'WC_Cardstream_Callback', home_url( '/' ));
 
 			$billing_address  = $order->billing_address_1 . "\n";
 			if (isset($order->billing_address_2) && !empty($order->billing_address_2)) {
