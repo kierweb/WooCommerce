@@ -101,7 +101,7 @@
 					'description'  	=> __( 'Please enter the signature key for the merchant account. This can be changed in the <a href="'.$this->mms_url.'" target="_blank">MMS</a>', 'woocommerce_cardstream' ),
 					'default'   	=> $this->secret
 				),
-				
+
 				'formResponsive' => array(
 					'title'   		=> __( 'Responsive form', 'woocommerce_cardstream' ),
 					'type'    		=> 'select',
@@ -112,7 +112,7 @@
 				'description'  	=> __( 'This controls whether the payment form is responsive.', 'woocommerce_cardstream' ),
 				'default'   	=> 'No'
 				),
-				
+
 				'customForm' => array(
 					'title' => __('Custom form', 'woocommerce_cardstream'),
 					'type' => 'text',
@@ -195,7 +195,7 @@
 			foreach ( $fields as $key => $value ) {
 				$form .= '<input type="hidden" name="' . $key . '" value="' . $value . '" />';
 			}
-			$form .= '<input type="submit" class="button alt" value="'.__('Pay securly via ' . ucwords( $this->gateway ), 'woocommerce_cardstream').'" />';
+			$form .= '<input type="submit" class="button alt" value="'.__('Pay securely via ' . ucwords( $this->gateway ), 'woocommerce_cardstream').'" />';
 			$form .= '<a class="button cancel" href="'.$order->get_cancel_order_url().'">'.__('Cancel order', 'woocommerce_cardstream').'</a>';
 			$form .= '</form>';
 
@@ -278,7 +278,7 @@
 				$form .= '<label class="card-label label-'.$key.'">' . $value['name'] . '</label>';
 				$form .= '<input type="text" class="card-input field-'. $key .'" name="' . $key . '" value="' . $value['value'] . '" ' . $value['required'] . '" />';
 			}
-			$form .= '<p><input type="submit" class="button alt" value="'.__('Pay securly via ' . ucwords( $this->gateway ), 'woocommerce_cardstream').'" /></p>';
+			$form .= '<p><input type="submit" class="button alt" value="'.__('Pay securely via ' . ucwords( $this->gateway ), 'woocommerce_cardstream').'" /></p>';
 			$form .= '<a class="button cancel" href="'.$order->get_cancel_order_url().'">'.__('Cancel order', 'woocommerce_cardstream').'</a>';
 			$form .= '</form>';
 
@@ -414,8 +414,8 @@
 			$order 		= new WC_Order( $order_id );
 			$countries	= new WC_Countries();
 			$amount 	= $order->get_total() * 100;
-			$redirect 	= str_replace( 'https:', 'http:', add_query_arg('wc-api', 'WC_Cardstream_Hosted', home_url( '/' ) ) );
-			$callback 	= str_replace( 'https:', 'http:', add_query_arg('wc-api', 'WC_Cardstream_Callback', home_url( '/' ) ) );
+			$redirect 	= add_query_arg('wc-api', 'WC_Cardstream_Hosted', home_url( '/' ));
+			$callback 	= add_query_arg('wc-api', 'WC_Cardstream_Callback', home_url( '/' ));
 
 			$billing_address  = $order->billing_address_1 . "\n";
 			if (isset($order->billing_address_2) && !empty($order->billing_address_2)) {
@@ -457,7 +457,7 @@
 			foreach ( $fields as $key => $value ) {
 				$form .= '<input type="hidden" name="' . $key . '" value="' . $value . '" />';
 			}
-			$form .= '<input type="submit" class="button alt" value="'.__('Pay securly via ' . ucwords( $this->gateway ), 'woocommerce_cardstream').'" />';
+			$form .= '<input type="submit" class="button alt" value="'.__('Pay securely via ' . ucwords( $this->gateway ), 'woocommerce_cardstream').'" />';
 			$form .= '<a class="button cancel" href="'.$order->get_cancel_order_url().'">'.__('Cancel order', 'woocommerce_cardstream').'</a>';
 			$form .= '</form>';
 
