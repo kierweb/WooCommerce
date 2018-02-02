@@ -557,6 +557,8 @@
 
 			global $woocommerce;
 
+			$_POST = array_map('stripslashes_deep', $_POST);
+
 			$response = $data ?: $_POST;
 
 			if (empty($response) || !isset($response['orderRef']) || !is_numeric($response['orderRef'])) {
@@ -648,7 +650,7 @@
 		}
 
 		/**
-		 * Check for CARDSTREAM Callback Response
+		 * Check for Callback Response
 		 * @deprecated Duplicate function. Use process_response instead.
 		 */
 		function process_callback() {
