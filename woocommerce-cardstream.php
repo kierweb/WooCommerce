@@ -2,8 +2,8 @@
 /*
 Plugin Name: WooCommerce Cardstream
 Plugin URI: http://woothemes.com/woocommerce/
-Description: Provides an Cardstream gateway for WooCommerce
-Version: 1.2
+Description: Provides a Cardstream Payment Gateway for WooCommerce
+Version: 1.3
 Author: Cardstream
 Author URI: http://www.cardstream.com/
 License: GPL2
@@ -39,9 +39,9 @@ function init_cardstream() {
 
 	add_filter('plugin_action_links', 'CS_add_action_plugin', 10, 5);
 
-	include( 'classes/cardstream.php' );
+	include('classes/cardstream.php');
 
-	add_filter('woocommerce_payment_gateways', 'add_cardstream_hosted' );
+	add_filter('woocommerce_payment_gateways', 'add_cardstream_paymentgateway' );
 
 }
 
@@ -56,13 +56,13 @@ function CS_add_action_plugin($actions, $plugin_file)
 
 	if ($plugin == $plugin_file)
 	{
-		$actions = array_merge(array('settings' => '<a href="' . admin_url('admin.php?page=wc-settings&tab=checkout&section=wc_cardstream_hosted') . '">' . __('Settings', 'General') . '</a>'), $actions);
+		$actions = array_merge(array('settings' => '<a href="' . admin_url('admin.php?page=wc-settings&tab=checkout&section=cardstream') . '">' . __('Settings', 'General') . '</a>'), $actions);
 	}
 
 	return $actions;
 }
 
-function add_cardstream_hosted($methods) {
-	$methods[] = 'WC_Cardstream_Hosted';
+function add_cardstream_paymentgateway($methods) {
+	$methods[] = 'WC_Cardstream';
 	return $methods;
 }
