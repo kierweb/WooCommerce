@@ -43,3 +43,7 @@ This option requires access to your servers directory.
 * Revised callback function
 = 1.2 =
 * Enables the use of custom and responsive forms
+= 1.3 =
+* Added embedded form
+* Less code duplication
+* Correct wordpress-escaped responses

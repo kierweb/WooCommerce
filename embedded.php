@@ -1,3 +1,4 @@
+<?php isset($this) or die(); ?>
 <iframe id="paymentgatewayframe" name="paymentgatewayframe" frameBorder="0" seamless='seamless' style="width:699px; height:1073px;margin: 0 auto;display:block;"></iframe>
 <form id="paymentgatewaymoduleform" action="<?=$this->gateway_url?>" method="post" target="paymentgatewayframe">
 <?php
