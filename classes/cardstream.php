@@ -169,15 +169,20 @@
 
 			$billing_address  = $order->get_billing_address_1();
 			$billing2 = $order->get_billing_address_2();
+
 			if (!empty($billing2)) {
 				$billing_address .= "\n" . $billing2;
 			}
 			$billing_address .= "\n" . $order->get_billing_city();
-			if (!empty($order->get_billing_state())) {
-				$billing_address .= "\n" . $order->get_billing_state();
+			$state = $order->get_billing_state();
+			if (!empty($state)) {
+				$billing_address .= "\n" . $state;
+				unset($state);
 			}
-			if (!empty($order->get_billing_country())) {
-				$billing_address .= "\n" . $order->get_billing_country();
+			$country = $order->get_billing_country();
+			if (!empty($country)) {
+				$billing_address .= "\n" . $country;
+				unset($country);
 			}
 
 			// Fields for hash
@@ -194,8 +199,10 @@
 				'customerEmail'     => $order->get_billing_email(),
 			);
 
-			if (!empty($order->get_billing_phone())) {
-				$req['customerPhone'] = $order->get_billing_phone();
+			$phone = $order->get_billing_phone();
+			if (!empty($phone)) {
+				$req['customerPhone'] = $phone;
+				unset($phone);
 			}
 
 			return $req;
@@ -282,10 +289,6 @@
 			global $woocommerce;
 
 			$order      = new WC_Order($order_id);
-			$countries  = new WC_Countries();
-			$amount     = $order->get_total() * 100;
-			$redirect   = add_query_arg('wc-api', 'WC_Cardstream', home_url('/'));
-			$callback   = add_query_arg('wc-api', 'WC_Cardstream_Callback', home_url('/'));
 
 			// Fields for hash
 			$fields = array(
@@ -349,21 +352,6 @@
 			global $woocommerce;
 
 			$order     = new WC_Order($order_id);
-			$countries = new WC_Countries();
-			$amount    = $order->get_total() * 100;
-
-			$billing_address  = $order->get_billing_address_1();
-			$billing2 = $order->get_billing_address_2();
-			if (!empty($billing2)) {
-				$billing_address .= "\n" . $billing2;
-			}
-			$billing_address .= "\n" . $order->get_billing_city();
-			if (!empty($order->get_billing_state())) {
-				$billing_address .= "\n" . $order->get_billing_state();
-			}
-			if (!empty($order->get_billing_country())) {
-				$billing_address .= "\n" . $order->get_billing_country();
-			}
 
 			$req = array_merge($this->capture_order($order_id), array(
 				'action'            => 'SALE',
