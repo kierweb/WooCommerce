@@ -479,7 +479,10 @@
 
 				// Check that the required fields are present:
 				foreach ($required as $i => $field) {
-					if (empty(@$_POST[$required[$i]])) {
+					if (
+						(isset($_POST[$field]) && empty($_POST[$field])) ||
+						!isset($_POST[$field])
+					) {
 						array_push($errors, $field);
 					}
 				}
