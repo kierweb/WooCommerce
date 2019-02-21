@@ -187,6 +187,7 @@
 
 			// Fields for hash
 			$req = array(
+				'action'            => 'SALE',
 				'merchantID'        => $this->settings['merchantID'],
 				'amount'            => $amount,
 				'countryCode'       => $this->settings['countryCode'],
@@ -351,24 +352,32 @@
 
 			global $woocommerce;
 
-			$order     = new WC_Order($order_id);
+			$order = new WC_Order($order_id);
+			$is3DS = isset($_REQUEST['MD'], $_REQUEST['PaRes'], $_REQUEST['xref']);
 
-			$req = array_merge($this->capture_order($order_id), array(
-				'action'            => 'SALE',
-				'type'              => 1,
-				'cardNumber'        => $_POST['cardNumber'],
-				'cardExpiryMonth'   => $_POST['cardExpiryMonth'],
-				'cardExpiryYear'    => $_POST['cardExpiryYear'],
-				'cardCVV'           => $_POST['cardCVV'],
-				'threeDSMD'         => (isset($_REQUEST['MD']) ? $_REQUEST['MD'] : null),
-				'threeDSPaRes'      => (isset($_REQUEST['PaRes']) ? $_REQUEST['PaRes'] : null),
-				'threeDSPaReq'      => (isset($_REQUEST['PaReq']) ? $_REQUEST['PaReq'] : null)
-			));
+			if ($is3DS) {
+				$req = $this->capture_order($order_id);
+				$req = array(
+					'merchantID'   => $req['merchantID'],
+					'action'       => $req['action'],
+					'xref'         => $_REQUEST['xref'],
+					'threeDSMD'    => (isset($_REQUEST['MD']) ? $_REQUEST['MD'] : null),
+					'threeDSPaRes' => (isset($_REQUEST['PaRes']) ? $_REQUEST['PaRes'] : null),
+					'threeDSPaReq' => (isset($_REQUEST['PaReq']) ? $_REQUEST['PaReq'] : null),
+				);
+			} else {
+				$req = array_merge($this->capture_order($order_id), array(
+					'type'              => 1,
+					'cardNumber'        => $_POST['cardNumber'],
+					'cardExpiryMonth'   => $_POST['cardExpiryMonth'],
+					'cardExpiryYear'    => $_POST['cardExpiryYear'],
+					'cardCVV'           => $_POST['cardCVV'],
+				));
+			}
 
 			if (isset($this->settings['signature']) && !empty($this->settings['signature'])) {
 				$req['signature'] = $this->create_signature($req, $this->settings['signature']);
 			}
-
 
 			$ch = curl_init($this->gateway_url);
 			curl_setopt($ch, CURLOPT_POST, true);
@@ -392,6 +401,8 @@
 				} else {
 					$pageUrl .= $_SERVER['SERVER_NAME'] . $_SERVER['REQUEST_URI'];
 				}
+				// step=2 is always in the URL
+				$pageUrl .= '&xref=' . $res['xref'];
 				?>
 				<p>Your transaction requires 3D Secure Authentication</p>
 				<form action="<?=htmlentities($res['threeDSACSURL'])?>" method="post">
@@ -472,7 +483,10 @@
 
 			global $woocommerce;
 
-			if (isset($_REQUEST['step']) && (int)$_REQUEST['step'] === 2) {
+			$step = (isset($_REQUEST['step']) ? (int)$_REQUEST['step'] : null);
+			$is3DS = isset($_REQUEST['MD'], $_REQUEST['PaRes'], $_REQUEST['xref']);
+
+			if ($step === 2 && !$is3DS) {
 
 				$required = array('cardNumber', 'cardCVV', 'cardExpiryMonth', 'cardExpiryYear');
 				$errors = array();
@@ -520,6 +534,10 @@
 					echo $this->generate_cardstream_direct_form_step2($order, $_REQUEST);
 
 				}
+
+			} else if ($step === 2 && $is3DS) {
+
+				echo $this->generate_cardstream_direct_form_step2($order, $_REQUEST);
 
 			} else {
 
